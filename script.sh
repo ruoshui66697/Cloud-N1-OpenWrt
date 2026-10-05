@@ -29,3 +29,7 @@ rm -rf theme-temp
 clone_retry https://github.com/ophub/luci-app-amlogic.git package-temp/luci-app-amlogic
 mv -f package-temp/luci-app-amlogic/luci-app-amlogic package/lean/
 rm -rf package-temp
+# Add AIC8800 USB Driver
+clone_retry https://github.com/shenmintao/aic8800d80.git package/aic8800
+echo "CONFIG_PACKAGE_kmod-aic8800=y" >> .config
+echo "CONFIG_PACKAGE_aic8800-firmware=y" >> .config
