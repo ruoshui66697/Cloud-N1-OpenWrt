@@ -30,41 +30,47 @@ clone_retry https://github.com/ophub/luci-app-amlogic.git package-temp/luci-app-
 mv -f package-temp/luci-app-amlogic/luci-app-amlogic package/lean/
 rm -rf package-temp
 # Add AIC8800 USB Driver
-# Add AIC8800 USB Driver
-clone_retry https://github.com/shenmintao/aic8800d80.git package/aic8800
+# Add AIC8800 USB Driver (Kernel 6.12 compatible version)
+git clone --depth 1 https://github.com/jzitnik/AIC8800.git package/aic8800
 
 # Create OpenWrt Makefile for AIC8800
 cat > package/aic8800/Makefile << 'EOF'
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-PKG_NAME:=aic8800d80
+PKG_NAME:=aic8800
 PKG_RELEASE:=1
 
 include $(INCLUDE_DIR)/package.mk
 
-define KernelPackage/aic8800d80
+define KernelPackage/aic8800
   SUBMENU:=Wireless Drivers
-  TITLE:=AIC8800D80 WiFi driver
+  TITLE:=AIC8800 WiFi driver (for kernel 6.12+)
   DEPENDS:=+kmod-cfg80211 +kmod-mac80211 +kmod-usb-core
-  FILES:=$(PKG_BUILD_DIR)/drivers/aic8800/aic8800_fdrv.ko $(PKG_BUILD_DIR)/drivers/aic8800/aic_load_fw.ko
+  FILES:=$(PKG_BUILD_DIR)/aic8800_fdrv.ko $(PKG_BUILD_DIR)/aic_load_fw.ko
   AUTOLOAD:=$(call AutoLoad,50,aic8800_fdrv aic_load_fw)
 endef
 
 define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)
-	$(CP) ./drivers $(PKG_BUILD_DIR)/
+	$(CP) ./aic8800_fdrv $(PKG_BUILD_DIR)/
+	$(CP) ./aic_load_fw $(PKG_BUILD_DIR)/
 endef
 
 define Build/Compile
 	$(MAKE) -C "$(LINUX_DIR)" \
-		M="$(PKG_BUILD_DIR)/drivers/aic8800" \
+		M="$(PKG_BUILD_DIR)/aic8800_fdrv" \
+		CROSS_COMPILE="$(TARGET_CROSS)" \
+		ARCH="$(LINUX_KARCH)" \
+		modules
+	$(MAKE) -C "$(LINUX_DIR)" \
+		M="$(PKG_BUILD_DIR)/aic_load_fw" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
 		ARCH="$(LINUX_KARCH)" \
 		modules
 endef
 
-$(eval $(call KernelPackage,aic8800d80))
+$(eval $(call KernelPackage,aic8800))
 EOF
 
-echo "CONFIG_PACKAGE_kmod-aic8800d80=y" >> .config
+echo "CONFIG_PACKAGE_kmod-aic8800=y" >> .config
