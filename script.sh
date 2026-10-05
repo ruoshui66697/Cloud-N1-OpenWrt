@@ -31,7 +31,11 @@ mv -f package-temp/luci-app-amlogic/luci-app-amlogic package/lean/
 rm -rf package-temp
 # Add AIC8800 USB Driver
 # Add AIC8800 USB Driver (Kernel 6.12 compatible version)
+# Add AIC8800 USB Driver (Jzitnik compatible version)
 git clone --depth 1 https://github.com/jzitnik/AIC8800.git package/aic8800
+
+# FIX kernel 6.18 API change: cfg80211_rx_unexpected_4addr_frame
+sed -i 's/cfg80211_rx_unexpected_4addr_frame(rwmx_vif->ndev, addr)/cfg80211_rx_unexpected_4addr_frame(rwmx_vif->ndev, addr, GFP_ATOMIC)/' package/aic8800/aic8800_fdrv/rwmx_rx.c
 
 # Create OpenWrt Makefile for AIC8800
 cat > package/aic8800/Makefile << 'EOF'
@@ -45,7 +49,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/aic8800
   SUBMENU:=Wireless Drivers
-  TITLE:=AIC8800 WiFi driver (for kernel 6.12+)
+  TITLE:=AIC8800 WiFi driver (for kernel 6.18+)
   DEPENDS:=+kmod-cfg80211 +kmod-mac80211 +kmod-usb-core
   FILES:=$(PKG_BUILD_DIR)/aic8800_fdrv.ko $(PKG_BUILD_DIR)/aic_load_fw.ko
   AUTOLOAD:=$(call AutoLoad,50,aic8800_fdrv aic_load_fw)
@@ -74,3 +78,4 @@ $(eval $(call KernelPackage,aic8800))
 EOF
 
 echo "CONFIG_PACKAGE_kmod-aic8800=y" >> .config
+
