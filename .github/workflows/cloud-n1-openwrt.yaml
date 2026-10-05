@@ -1,6 +1,7 @@
 name: Cloud N1 OpenWrt
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
