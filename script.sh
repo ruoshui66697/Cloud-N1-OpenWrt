@@ -29,15 +29,15 @@ rm -rf theme-temp
 clone_retry https://github.com/ophub/luci-app-amlogic.git package-temp/luci-app-amlogic
 mv -f package-temp/luci-app-amlogic/luci-app-amlogic package/lean/
 rm -rf package-temp
-# Add AIC8800 USB Driver
-# Add AIC8800 USB Driver (Kernel 6.12 compatible version)
-# Add AIC8800 USB Driver (Jzitnik compatible version)
-git clone --depth 1 https://github.com/jzitnik/AIC8800.git package/aic8800
+# ==================== AIC8800 USB Driver ====================
+# 1. 下载驱动源码（使用 clone_retry 防止网络波动）
+clone_retry https://github.com/jzitnik/AIC8800.git package/aic8800
 
-# FIX kernel 6.18 API change: cfg80211_rx_unexpected_4addr_frame
-sed -i 's/cfg80211_rx_unexpected_4addr_frame(rwmx_vif->ndev, addr)/cfg80211_rx_unexpected_4addr_frame(rwmx_vif->ndev, addr, GFP_ATOMIC)/' package/aic8800/aic8800_fdrv/rwmx_rx.c
+# 2. 修复 Linux 6.18 内核 API 变更（补全缺失的 GFP_ATOMIC 参数）
+sed -i 's/cfg80211_rx_spurious_frame(\([^)]*\))/cfg80211_rx_spurious_frame(\1, GFP_ATOMIC)/g' package/aic8800/aic8800_fdrv/rwmx_rx.c
+sed -i 's/cfg80211_rx_unexpected_4addr_frame(\([^)]*\))/cfg80211_rx_unexpected_4addr_frame(\1, GFP_ATOMIC)/g' package/aic8800/aic8800_fdrv/rwmx_rx.c
 
-# Create OpenWrt Makefile for AIC8800
+# 3. 生成 OpenWrt 软件包 Makefile
 cat > package/aic8800/Makefile << 'EOF'
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
@@ -77,5 +77,5 @@ endef
 $(eval $(call KernelPackage,aic8800))
 EOF
 
+# 4. 将驱动加入配置
 echo "CONFIG_PACKAGE_kmod-aic8800=y" >> .config
-
