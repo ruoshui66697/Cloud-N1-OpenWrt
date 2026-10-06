@@ -1,9 +1,6 @@
 #!/bin/bash
 cd openwrt
-# 强制使用 6.12 内核版本
-echo "CONFIG_LINUX_6_12=y" >> .config
-sed -i 's/KERNEL_PATCHVER:=.*/KERNEL_PATCHVER:=6.12/' target/linux/armvirt/Makefile
-
+find target/linux -name Makefile -exec sed -i 's/KERNEL_PATCHVER:=.*/KERNEL_PATCHVER:=6.12/' {} + 
 clone_retry() {
   local repo="$1"
   local target="$2"
