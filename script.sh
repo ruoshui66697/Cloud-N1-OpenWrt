@@ -33,12 +33,12 @@ rm -rf package-temp
 # 1. 下载驱动源码（使用 clone_retry 防止网络波动）
 clone_retry https://github.com/jzitnik/AIC8800.git package/aic8800
 
-# 2. 修复 Linux 6.18 内核 API 变更（补全缺失的 GFP_ATOMIC 参数）
+# 2. 修复内核 API（这 3 行 sed 保留，不要删）
 sed -i 's/cfg80211_rx_spurious_frame(\([^)]*\))/cfg80211_rx_spurious_frame(\1, GFP_ATOMIC)/g' package/aic8800/aic8800_fdrv/rwmx_rx.c
 sed -i 's/cfg80211_rx_unexpected_4addr_frame(\([^)]*\))/cfg80211_rx_unexpected_4addr_frame(\1, GFP_ATOMIC)/g' package/aic8800/aic8800_fdrv/rwmx_rx.c
 sed -i 's|vif->ap_next_mesh_pm = NL80211_MESH_POWER_ACTIVE;|vif->ap_next_mesh_pm = NL80211_MESH_POWER_ACTIVE; /* fall through */|' package/aic8800/aic8800_fdrv/rwmx_main.c
 
-# Create OpenWrt Makefile for AIC8800
+# 3. 生成 Makefile（把上面的 KCFLAGS 写进去）
 cat > package/aic8800/Makefile << 'EOF'
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
@@ -67,16 +67,17 @@ define Build/Compile
 		M="$(PKG_BUILD_DIR)/aic8800_fdrv" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
 		ARCH="$(LINUX_KARCH)" \
+		KCFLAGS="-Wno-error=implicit-fallthrough" \
 		modules
 	$(MAKE) -C "$(LINUX_DIR)" \
 		M="$(PKG_BUILD_DIR)/aic_load_fw" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
 		ARCH="$(LINUX_KARCH)" \
+		KCFLAGS="-Wno-error=implicit-fallthrough" \
 		modules
 endef
 
 $(eval $(call KernelPackage,aic8800))
 EOF
 
-# 4. 将驱动加入配置
 echo "CONFIG_PACKAGE_kmod-aic8800=y" >> .config
