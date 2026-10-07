@@ -37,7 +37,7 @@ clone_retry https://github.com/jzitnik/AIC8800.git package/aic8800
 sed -i 's/cfg80211_rx_spurious_frame(\([^)]*\))/cfg80211_rx_spurious_frame(\1, GFP_ATOMIC)/g' package/aic8800/aic8800_fdrv/rwmx_rx.c
 sed -i 's/cfg80211_rx_unexpected_4addr_frame(\([^)]*\))/cfg80211_rx_unexpected_4addr_frame(\1, GFP_ATOMIC)/g' package/aic8800/aic8800_fdrv/rwmx_rx.c
 
-# 3. 生成 OpenWrt 软件包 Makefile
+# Create OpenWrt Makefile for AIC8800
 cat > package/aic8800/Makefile << 'EOF'
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
@@ -49,7 +49,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/aic8800
   SUBMENU:=Wireless Drivers
-  TITLE:=AIC8800 WiFi driver (for kernel 6.18+)
+  TITLE:=AIC8800 WiFi driver (for kernel 6.12+)
   DEPENDS:=+kmod-cfg80211 +kmod-mac80211 +kmod-usb-core
   FILES:=$(PKG_BUILD_DIR)/aic8800_fdrv.ko $(PKG_BUILD_DIR)/aic_load_fw.ko
   AUTOLOAD:=$(call AutoLoad,50,aic8800_fdrv aic_load_fw)
@@ -66,11 +66,13 @@ define Build/Compile
 		M="$(PKG_BUILD_DIR)/aic8800_fdrv" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
 		ARCH="$(LINUX_KARCH)" \
+		EXTRA_CFLAGS="-Wno-error=implicit-fallthrough" \
 		modules
 	$(MAKE) -C "$(LINUX_DIR)" \
 		M="$(PKG_BUILD_DIR)/aic_load_fw" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
 		ARCH="$(LINUX_KARCH)" \
+		EXTRA_CFLAGS="-Wno-error=implicit-fallthrough" \
 		modules
 endef
 
