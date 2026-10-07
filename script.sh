@@ -36,6 +36,7 @@ clone_retry https://github.com/jzitnik/AIC8800.git package/aic8800
 # 2. 修复 Linux 6.18 内核 API 变更（补全缺失的 GFP_ATOMIC 参数）
 sed -i 's/cfg80211_rx_spurious_frame(\([^)]*\))/cfg80211_rx_spurious_frame(\1, GFP_ATOMIC)/g' package/aic8800/aic8800_fdrv/rwmx_rx.c
 sed -i 's/cfg80211_rx_unexpected_4addr_frame(\([^)]*\))/cfg80211_rx_unexpected_4addr_frame(\1, GFP_ATOMIC)/g' package/aic8800/aic8800_fdrv/rwmx_rx.c
+sed -i 's|vif->ap_next_mesh_pm = NL80211_MESH_POWER_ACTIVE;|vif->ap_next_mesh_pm = NL80211_MESH_POWER_ACTIVE; /* fall through */|' package/aic8800/aic8800_fdrv/rwmx_main.c
 
 # Create OpenWrt Makefile for AIC8800
 cat > package/aic8800/Makefile << 'EOF'
@@ -66,13 +67,11 @@ define Build/Compile
 		M="$(PKG_BUILD_DIR)/aic8800_fdrv" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
 		ARCH="$(LINUX_KARCH)" \
-		EXTRA_CFLAGS="-Wno-error=implicit-fallthrough" \
 		modules
 	$(MAKE) -C "$(LINUX_DIR)" \
 		M="$(PKG_BUILD_DIR)/aic_load_fw" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
 		ARCH="$(LINUX_KARCH)" \
-		EXTRA_CFLAGS="-Wno-error=implicit-fallthrough" \
 		modules
 endef
 
